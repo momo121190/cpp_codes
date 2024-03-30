@@ -1,0 +1,29 @@
+\documentclass{article}
+\usepackage{array}
+\usepackage[table]{xcolor}
+
+\begin{document}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Difference between \textcolor{blue}{lvalue} and \textcolor{blue}{rvalue} references}
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|>{\raggedright\arraybackslash}m{7cm}|>{\raggedright\arraybackslash}m{7cm}|}
+        \hline
+        \rowcolor{gray!30}
+        \textbf{\textcolor{blue}{Lvalue} Reference} & \textbf{\textcolor{blue}{Rvalue} Reference} \\
+        \hline
+        A reference to an object that has a distinct memory address and can be modified. & A reference to a temporary object, which can be moved from. \\
+        \hline
+        Declared using the \& operator, e.g., \texttt{int\&}. & Declared using the \&\& operator, e.g., \texttt{int\&\&}. \\
+        \hline
+        Used for modifying an object's value and accessing its state. & Used for moving an object's value efficiently, often to transfer resources. \\
+        \hline
+    \end{tabular}
+   % \label{tab:lvalue_rvalue_references}
+\end{table}
+
+ 
+
+\end{document}
+
