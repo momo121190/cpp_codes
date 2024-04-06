@@ -1,27 +1,47 @@
- from conan.base import ConanFile
-from conan.tools import settings
+from conan import ConanFile
+from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
 
-class MyCPPProject(ConanFile):
-    name = "my_cpp_project"  # Replace with your project name
-    version = "0.1.0"  # Replace with your desired version
 
-    # Define a profile named "my_profile" (replace with your desired profile name)
-    settings.define("build_type", default="Release", descriptions="Build type")
-    settings.options.add("boost", "shared", default=False, descriptions="Boost library linkage")
+class helloRecipe(ConanFile):
+    name = "hello"
+    version = "1.0"
 
-    requires = [
-        "boost/1.76.0@conan_boost/channels",  # Example dependency
-    ]
+    # Optional metadata
+    license = "<Put the package license here>"
+    author = "<Put your name here> <And your email here>"
+    url = "<Package recipe repository url here, for issues about the package>"
+    description = "<Description of hello package here>"
+    topics = ("<Put some tag here>", "<here>", "<and here>")
+
+    # Binary configuration
+    settings = "os", "compiler", "build_type", "arch"
+    options = {"shared": [True, False], "fPIC": [True, False]}
+    default_options = {"shared": False, "fPIC": True}
+
+    # Sources are located in the same place as this recipe, copy them to the recipe
+    exports_sources = "CMakeLists.txt", "src/*", "include/*"
+
+    def config_options(self):
+        if self.settings.os == "Windows":
+            del self.options.fPIC
+
+    def layout(self):
+        cmake_layout(self)
+
+    def generate(self):
+        deps = CMakeDeps(self)
+        deps.generate()
+        tc = CMakeToolchain(self)
+        tc.generate()
 
     def build(self):
-        # Replace with your actual build commands
-        cmake = tools.get_tool("cmake")
-        cmake.configure(build_dir=self.build_folder)
-        cmake.generate(build_dir=self.build_folder)
-        cmake.build(build_dir=self.build_folder)
+        cmake = CMake(self)
+        cmake.configure()
+        cmake.build()
 
     def package(self):
-        self.copy("*.h", dst="include", src=self.source_folder)  # Copy headers
-        self.copy("*.lib", dst="lib", src=self.build_folder)  # Copy libraries (adjust for .so or .dll)
-        self.copy("*.a", dst="lib", src=self.build_folder)  # Copy archives (adjust for .so or .dll)
-        # Copy other relevant files (executables, data) as needed
+        cmake = CMake(self)
+        cmake.install()
+
+    def package_info(self):
+        self.cpp_info.libs = ["hello"]
