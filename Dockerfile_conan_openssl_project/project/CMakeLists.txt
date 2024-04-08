@@ -6,9 +6,9 @@ add_definitions("-std=c++11")
  
 # Inclure le fichier conan_toolchain.cmake
 include(conan_toolchain.cmake)
-find_package("OPENSSL")
+find_package("OpenSSL")
 
-if(OPENSSL_FOUND)
+if(OpenSSL_FOUND)
    add_executable(openssl_random_generator openssl_random_generator.cpp)
     include_directories(${OPENSSL_INCLUDE_DIRS})
     target_link_libraries(enough ${OPENSSL_LIBRARIES})
