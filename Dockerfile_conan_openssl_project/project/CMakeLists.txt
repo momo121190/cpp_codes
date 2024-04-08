@@ -8,4 +8,4 @@ set(options TARGETS NO_OUTPUT_DIRS SKIP_RPATH KEEP_RPATHS SKIP_STD SKIP_FPIC)
 
 
  add_executable(openssl_random_generator openssl_random_generator.cpp)
- target_link_libraries(pointer_overloading ${CONAN_LIBS})
+ target_link_libraries(openssl_random_generator ${CONAN_LIBS})
