@@ -3,8 +3,10 @@ project(cpp_codes)
 
 add_definitions("-std=c++11")
 
-# Inclure le chemin d'inclusion pour OpenSSL
-include_directories(${CONAN_INCLUDE_DIRS})
+find_package(OpenSSL REQUIRED)
+
+# Ajoute le chemin d'inclusion pour OpenSSL
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 # Inclure le fichier conan_toolchain.cmake
 include(conan_toolchain.cmake)
@@ -14,5 +16,5 @@ set(options TARGETS NO_OUTPUT_DIRS SKIP_RPATH KEEP_RPATHS SKIP_STD SKIP_FPIC)
 add_executable(openssl_random_generator openssl_random_generator.cpp)
 
 # Lier les bibliothèques Conan à votre exécutable
-target_link_libraries(openssl_random_generator ${CONAN_LIBS})
+target_link_libraries(openssl_random_generator ${CONAN_LIBS} ${OPENSSL_LIBRARIES})
 
