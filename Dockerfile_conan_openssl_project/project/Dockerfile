@@ -1,42 +1,47 @@
-# Utiliser l'image de base Ubuntu 22.04
+# Use the base image Ubuntu 22.04
 FROM ubuntu:22.04
+# Set user to root
 USER root
-# Mettre à jour le système et installer les dépendances nécessaires
+
+# Update the system and install necessary tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     python3 \
     git \
     wget \
-    python3-pip\
+    python3-pip \
     make \
     build-essential
 
-# Installer Conan à l'aide de pip
+# Install Conan using pip
 RUN pip3 install conan
 
- 
+# Clone the project source code from GitHub
+RUN git clone -b main https://github.com/momo121190/cpp_codes.git
+# Navigate to the project directory
+WORKDIR /cpp_codes/
+# Switch Git branch to "main"
+RUN git checkout main
+# Navigate to the subdirectory containing the project code
+WORKDIR /cpp_codes/Dockerfile_conan_openssl_project
 
-# Cloner le code source de l'application
-RUN git clone -b master https://github.com/momo121190/cpp_codes.git
-COPY . /cpp_codes/Dockerfile_conan_openssl_project/
-# Aller dans le répertoire cpp_codes
-WORKDIR /cpp_codes 
-#COPY conanfile.txt /cpp_codes/Dockerfile_conan_openssl_project/project
-
+# Copy the CMakeLists.txt file into the project directory
 COPY CMakeLists.txt /cpp_codes/Dockerfile_conan_openssl_project/
-# Exécuter ls -l pour afficher le contenu du répertoire /app
- 
 
- 
+# Remove the conanfile.py if it exists
 RUN rm -rf  conanfile.py
+# Detect the Conan profile in use
 RUN conan profile detect
+# Remove the build directory if it exists
 RUN rm -rf build
-RUN mkdir build && cd build &&   pwd&& conan install .. --build=missing
-#COPY ./conan_toolchain.cmake  /cpp_codes/Dockerfile_conan_openssl_project/
-RUN search_result=$(find / -name "lib*.a" -o -name "lib*.so" -o -name "*.h")
+# Create the build directory and navigate to it
+RUN mkdir build && cd build &&   pwd && conan install .. --build=missing
 
-# Afficher le résultat
-RUN echo "$search_result"
-#RUN cmake /cpp_codes/Dockerfile_conan_openssl_project -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release 
-#RUN cmake --build .
- 
+# Search for all .h files in the system and write them to result.txt
+RUN search_result=$(find / -name "*.h") && echo "$search_result" > result.txt
+
+# Configure CMake with the project directory and the build type
+RUN cmake /cpp_codes/Dockerfile_conan_openssl_project -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  
+# Build the project with cmake
+RUN cmake --build .
+
