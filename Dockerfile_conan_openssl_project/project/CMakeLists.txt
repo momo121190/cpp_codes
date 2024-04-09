@@ -6,6 +6,7 @@ add_definitions("-std=c++11")
  
 # Inclure le fichier conan_toolchain.cmake
 include(conan_toolchain.cmake)
+set(options TARGETS NO_OUTPUT_DIRS SKIP_RPATH KEEP_RPATHS SKIP_STD SKIP_FPIC)
 find_package("OpenSSL")
 find_package("ZLIB")
 if(OpenSSL_FOUND)
