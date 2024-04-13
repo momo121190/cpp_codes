@@ -26,7 +26,7 @@ include_directories("/root/.conan2/p/paho-aeb0db1c43c58/p/include/")
         include_directories(${ZLIB_INCLUDE_DIRS})
     add_executable(async_publish async_publish.cpp)
    
-  target_link_libraries(async_publish ${ZLIB_LIBRARIES} ${OPENSSL_LIBRARIES} PahoMqttCpp::paho-mqttpp3-static ${CONAN_LIBS})
+  target_link_libraries(async_publish ${ZLIB_LIBRARIES} ${OPENSSL_LIBRARIES} /root/.conan2/p/paho-aeb0db1c43c58/p/lib/libpaho-mqttpp3.a ${CONAN_LIBS})
 
 #else()
  #   message(FATAL_ERROR "PahoMqttCpp not found")
