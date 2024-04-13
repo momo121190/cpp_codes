@@ -7,7 +7,7 @@ add_definitions("-std=c++11")
 # Inclure le fichier conan_toolchain.cmake
 include(conan_toolchain.cmake)
 set(options TARGETS NO_OUTPUT_DIRS SKIP_RPATH KEEP_RPATHS SKIP_STD SKIP_FPIC)
-find_package(PahoMqttCpp)
+#find_package(PahoMqttCpp)
  find_package(ZLIB)
  find_package(OpenSSL)
  if(ZLIB_FOUND)
@@ -20,17 +20,17 @@ find_package(PahoMqttCpp)
     else()
         message(WARNING "OpenSSL not found.")
     endif()
-if(PahoMqttCpp_FOUND)
- include_directories(${PahoMqttCpp_INCLUDE_DIRS})
+#if(PahoMqttCpp_FOUND)
+include_directories("/root/.conan2/p/paho-aeb0db1c43c58/p/include/")
     include_directories(${OPENSSL_INCLUDE_DIRS})
         include_directories(${ZLIB_INCLUDE_DIRS})
     add_executable(async_publish async_publish.cpp)
    
   target_link_libraries(async_publish ${ZLIB_LIBRARIES} ${OPENSSL_LIBRARIES} PahoMqttCpp::paho-mqttpp3-static ${CONAN_LIBS})
 
-else()
-    message(FATAL_ERROR "PahoMqttCpp not found")
-endif()
+#else()
+ #   message(FATAL_ERROR "PahoMqttCpp not found")
+#endif()
 
 
 
