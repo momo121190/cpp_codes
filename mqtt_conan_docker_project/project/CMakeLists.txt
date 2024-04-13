@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.22.1)
 project(cpp_codes)
 
 add_definitions("-std=c++11")
@@ -7,7 +7,7 @@ add_definitions("-std=c++11")
 # Inclure le fichier conan_toolchain.cmake
 include(conan_toolchain.cmake)
 set(options TARGETS NO_OUTPUT_DIRS SKIP_RPATH KEEP_RPATHS SKIP_STD SKIP_FPIC)
-find_package(PahoMqttCpp REQUIRED)
+find_package(PahoMqttCpp)
  find_package(ZLIB)
  find_package(OpenSSL)
  if(ZLIB_FOUND)
