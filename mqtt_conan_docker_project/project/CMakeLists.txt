@@ -30,9 +30,9 @@ include_directories(${PahoMqttCpp_INCLUDE_DIRS})
    
   target_link_libraries(async_publish ${ZLIB_LIBRARIES} ${OPENSSL_LIBRARIES} PahoMqttCpp::paho-mqttpp3-static ${CONAN_LIBS}  PRIVATE PkgConfig::PAHO_MQTT_CPP)
 
-#else()
+else()
  #   message(FATAL_ERROR "PahoMqttCpp not found")
-#endif()
+endif()
 
 
 
