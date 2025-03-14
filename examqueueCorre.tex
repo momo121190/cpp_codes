@@ -1,0 +1,260 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+\urlstyle{same}
+
+\title{Advanced C++ Multithreading Exam: Answers and Corrections}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Instructions}
+This document provides detailed answers and explanations for the Advanced C++ Multithreading Exam. Each section is addressed with corrections, definitions, and code explanations.
+
+---
+
+\section*{Section 1: Multiple Choice Questions (Answers)}
+
+\begin{enumerate}
+    \item \textbf{What is the primary purpose of \texttt{std::mutex} in a multi-threaded program?}
+    \begin{enumerate}[label=(\alph*)]
+        \item To allow threads to wait for a condition
+        \item \textbf{To protect shared resources from concurrent access} (Correct)
+        \item To manage thread execution order
+        \item To signal between threads
+    \end{enumerate}
+    \textbf{Explanation:} \texttt{std::mutex} is used to ensure that only one thread can access a shared resource at a time, preventing race conditions.
+
+    \item \textbf{Which of the following is true about \texttt{std::condition\_variable}?}
+    \begin{enumerate}[label=(\alph*)]
+        \item It can be used without a \texttt{std::mutex}
+        \item \textbf{It must always be used with a \texttt{std::mutex}} (Correct)
+        \item It is used to lock resources
+        \item It replaces the need for \texttt{std::mutex}
+    \end{enumerate}
+    \textbf{Explanation:} \texttt{std::condition\_variable} requires a \texttt{std::mutex} to synchronize access to shared data and to avoid race conditions.
+
+    \item \textbf{What happens if a thread tries to lock a \texttt{std::mutex} that is already locked by another thread?}
+    \begin{enumerate}[label=(\alph*)]
+        \item The thread terminates immediately
+        \item The thread continues execution without locking
+        \item \textbf{The thread blocks until the mutex is unlocked} (Correct)
+        \item The thread throws an exception
+    \end{enumerate}
+    \textbf{Explanation:} A thread attempting to lock an already locked mutex will block (wait) until the mutex is unlocked by the owning thread.
+
+    \item \textbf{What is the purpose of \texttt{std::queue} in a producer-consumer scenario?}
+    \begin{enumerate}[label=(\alph*)]
+        \item To store threads
+        \item \textbf{To store shared data between threads} (Correct)
+        \item To lock resources
+        \item To signal threads
+    \end{enumerate}
+    \textbf{Explanation:} \texttt{std::queue} is used as a buffer to store data produced by one thread and consumed by another.
+
+    \item \textbf{Which of the following is true about \texttt{std::thread}?}
+    \begin{enumerate}[label=(\alph*)]
+        \item \textbf{A thread cannot be joined after it has been detached} (Correct)
+        \item A thread must always be joined
+        \item A thread can be both joined and detached
+        \item A thread cannot be detached
+    \end{enumerate}
+    \textbf{Explanation:} Once a thread is detached, it cannot be joined. A thread must be either joined or detached, but not both.
+
+    \item \textbf{What is the purpose of \texttt{std::condition\_variable::wait()}?}
+    \begin{enumerate}[label=(\alph*)]
+        \item To lock a mutex
+        \item \textbf{To wait for a signal while releasing the mutex} (Correct)
+        \item To terminate a thread
+        \item To unlock a mutex
+    \end{enumerate}
+    \textbf{Explanation:} \texttt{wait()} releases the mutex and blocks the thread until it is notified by another thread.
+
+    \item \textbf{What happens if a \texttt{std::condition\_variable} is signaled but no thread is waiting?}
+    \begin{enumerate}[label=(\alph*)]
+        \item \textbf{The signal is ignored} (Correct)
+        \item The program crashes
+        \item The signal is stored for the next waiting thread
+        \item An exception is thrown
+    \end{enumerate}
+    \textbf{Explanation:} If no thread is waiting, the signal is lost and has no effect.
+
+    \item \textbf{Which of the following is true about \texttt{std::unique\_lock}?}
+    \begin{enumerate}[label=(\alph*)]
+        \item It cannot be used with \texttt{std::condition\_variable}
+        \item \textbf{It automatically unlocks the mutex when it goes out of scope} (Correct)
+        \item It is less flexible than \texttt{std::lock\_guard}
+        \item It cannot be used with \texttt{std::mutex}
+    \end{enumerate}
+    \textbf{Explanation:} \texttt{std::unique\_lock} provides more flexibility than \texttt{std::lock\_guard} and automatically unlocks the mutex when it goes out of scope.
+
+    \item \textbf{What is the purpose of \texttt{std::condition\_variable::notify\_all()}?}
+    \begin{enumerate}[label=(\alph*)]
+        \item To wake up a single waiting thread
+        \item \textbf{To wake up all waiting threads} (Correct)
+        \item To terminate all threads
+        \item To lock all mutexes
+    \end{enumerate}
+    \textbf{Explanation:} \texttt{notify\_all()} wakes up all threads waiting on the condition variable.
+
+    \item \textbf{What is a deadlock in the context of multi-threading?}
+    \begin{enumerate}[label=(\alph*)]
+        \item A situation where a thread terminates unexpectedly
+        \item \textbf{A situation where two or more threads are blocked forever} (Correct)
+        \item A situation where a mutex is unlocked twice
+        \item A situation where a condition variable is signaled multiple times
+    \end{enumerate}
+    \textbf{Explanation:} Deadlock occurs when two or more threads are waiting for each other to release resources, causing all of them to be blocked indefinitely.
+\end{enumerate}
+
+---
+
+\section*{Section 2: Code Analysis (Answers)}
+
+\begin{enumerate}
+    \item \textbf{Analyze the following code and identify any potential issues:}
+    \begin{verbatim}
+    std::mutex mtx;
+    std::queue<int> queue;
+    std::condition_variable cv;
+
+    void producer() {
+        for (int i = 0; i < 10; ++i) {
+            std::unique_lock<std::mutex> lock(mtx);
+            queue.push(i);
+            cv.notify_one();
+        }
+    }
+
+    void consumer() {
+        while (true) {
+            std::unique_lock<std::mutex> lock(mtx);
+            cv.wait(lock);
+            int value = queue.front();
+            queue.pop();
+            std::cout << value << std::endl;
+        }
+    }
+    \end{verbatim}
+    \textbf{Answer:} The consumer does not check if the queue is empty before calling \texttt{queue.front()} and \texttt{queue.pop()}. This can lead to undefined behavior if the queue is empty. Additionally, the consumer runs in an infinite loop without a termination condition.
+
+    \item \textbf{What is the purpose of the \texttt{std::unique\_lock} in the above code?}
+    \textbf{Answer:} \texttt{std::unique\_lock} is used to lock the mutex and ensure thread-safe access to the shared \texttt{std::queue}.
+
+    \item \textbf{What happens if the producer finishes before the consumer starts?}
+    \textbf{Answer:} If the producer finishes before the consumer starts, the consumer will wait indefinitely because there will be no notifications to wake it up.
+
+    \item \textbf{How can you modify the consumer to handle the case where the queue is empty?}
+    \textbf{Answer:} Modify the consumer to check if the queue is empty after waking up:
+    \begin{verbatim}
+    cv.wait(lock, [&]{ return !queue.empty(); });
+    \end{verbatim}
+
+    \item \textbf{What is the purpose of \texttt{cv.notify\_one()} in the producer?}
+    \textbf{Answer:} \texttt{cv.notify\_one()} wakes up one waiting thread (the consumer) to process the new data added to the queue.
+
+    \item \textbf{What happens if \texttt{cv.notify\_all()} is used instead of \texttt{cv.notify\_one()}?}
+    \textbf{Answer:} If \texttt{cv.notify\_all()} is used, all waiting threads will be woken up, which may lead to unnecessary contention if only one thread can process the data.
+
+    \item \textbf{What is the risk of not using \texttt{std::unique\_lock} in the consumer?}
+    \textbf{Answer:} Without \texttt{std::unique\_lock}, the mutex will not be locked, leading to race conditions and undefined behavior when accessing the shared queue.
+
+    \item \textbf{How can you ensure the consumer thread terminates gracefully?}
+    \textbf{Answer:} Add a termination condition, such as a boolean flag, and notify the consumer when the producer is done:
+    \begin{verbatim}
+    bool done = false;
+    // Producer sets done = true and calls cv.notify_one()
+    // Consumer checks for done and breaks the loop
+    \end{verbatim}
+
+    \item \textbf{What is the purpose of the \texttt{std::queue} in this code?}
+    \textbf{Answer:} \texttt{std::queue} is used as a buffer to store data produced by the producer and consumed by the consumer.
+
+    \item \textbf{What is the significance of the \texttt{std::mutex} in this code?}
+    \textbf{Answer:} \texttt{std::mutex} ensures that only one thread can access the shared \texttt{std::queue} at a time, preventing race conditions.
+\end{enumerate}
+
+---
+
+\section*{Section 3: Code Implementation (Answers)}
+
+\begin{enumerate}
+    \item \textbf{Implement a producer-consumer model using \texttt{std::queue}, \texttt{std::mutex}, \texttt{std::condition\_variable}, and \texttt{std::thread}.}
+    \textbf{Answer:} See the corrected code in Section 2.
+
+    \item \textbf{Modify the above implementation to handle multiple producers and consumers.}
+    \textbf{Answer:} Use multiple threads for producers and consumers, and ensure proper synchronization with \texttt{std::mutex} and \texttt{std::condition\_variable}.
+
+    \item \textbf{Add a mechanism to gracefully shut down the consumer threads.}
+    \textbf{Answer:} Use a boolean flag (e.g., \texttt{done}) and notify all consumers when the flag is set.
+
+    \item \textbf{Implement a thread-safe queue using \texttt{std::queue}, \texttt{std::mutex}, and \texttt{std::condition\_variable}.}
+    \textbf{Answer:} Wrap \texttt{std::queue} with \texttt{std::mutex} and \texttt{std::condition\_variable} to ensure thread-safe operations.
+
+    \item \textbf{Write a program where two threads increment a shared counter using \texttt{std::mutex} for synchronization.}
+    \textbf{Answer:} Use \texttt{std::mutex} to protect the shared counter and ensure atomic increments.
+
+    \item \textbf{Write a program where a thread waits for a signal from another thread using \texttt{std::condition\_variable}.}
+    \textbf{Answer:} Use \texttt{std::condition\_variable} to synchronize the threads and signal when the condition is met.
+
+    \item \textbf{Implement a barrier synchronization mechanism using \texttt{std::mutex} and \texttt{std::condition\_variable}.}
+    \textbf{Answer:} Use a counter and \texttt{std::condition\_variable} to block threads until all threads reach the barrier.
+
+    \item \textbf{Write a program to demonstrate a deadlock scenario involving two threads and two mutexes.}
+    \textbf{Answer:} Create two threads that lock two mutexes in opposite orders, causing a deadlock.
+
+    \item \textbf{Fix the deadlock in the above program.}
+    \textbf{Answer:} Ensure both threads lock the mutexes in the same order.
+
+    \item \textbf{Write a program to demonstrate the use of \texttt{std::async} with \texttt{std::mutex} and \texttt{std::condition\_variable}.}
+    \textbf{Answer:} Use \texttt{std::async} to launch tasks and synchronize them using \texttt{std::mutex} and \texttt{std::condition\_variable}.
+\end{enumerate}
+
+---
+
+\section*{Section 4: Theoretical Questions (Answers)}
+
+\begin{enumerate}
+    \item \textbf{Explain the difference between \texttt{std::mutex} and \texttt{std::recursive\_mutex}.}
+    \textbf{Answer:} \texttt{std::mutex} cannot be locked multiple times by the same thread, while \texttt{std::recursive\_mutex} can.
+
+    \item \textbf{What is spurious wakeup, and how can you handle it in \texttt{std::condition\_variable}?}
+    \textbf{Answer:} Spurious wakeup is when a thread wakes up without being notified. Handle it by using a predicate in \texttt{wait()}.
+
+    \item \textbf{Explain the difference between \texttt{std::lock\_guard} and \texttt{std::unique\_lock}.}
+    \textbf{Answer:} \texttt{std::lock\_guard} is simpler and cannot be unlocked manually, while \texttt{std::unique\_lock} is more flexible and can be unlocked manually.
+
+    \item \textbf{What is the purpose of \texttt{std::condition\_variable::wait\_for()}?}
+    \textbf{Answer:} \texttt{wait\_for()} allows a thread to wait for a condition for a specified duration.
+
+    \item \textbf{Explain the concept of thread safety and how it applies to \texttt{std::queue}.}
+    \textbf{Answer:} Thread safety ensures that shared data is accessed in a way that prevents race conditions. \texttt{std::queue} is not thread-safe by default and requires synchronization.
+
+    \item \textbf{What is the difference between \texttt{std::thread::join()} and \texttt{std::thread::detach()}?}
+    \textbf{Answer:} \texttt{join()} waits for the thread to finish, while \texttt{detach()} allows the thread to run independently.
+
+    \item \textbf{Explain the concept of a race condition and how \texttt{std::mutex} prevents it.}
+    \textbf{Answer:} A race condition occurs when multiple threads access shared data concurrently, leading to undefined behavior. \texttt{std::mutex} ensures only one thread accesses the data at a time.
+
+    \item \textbf{What is the purpose of \texttt{std::atomic} in multi-threading?}
+    \textbf{Answer:} \texttt{std::atomic} ensures that operations on shared variables are performed atomically, without the need for a mutex.
+
+    \item \textbf{Explain the difference between \texttt{std::condition\_variable} and \texttt{std::future}.}
+    \textbf{Answer:} \texttt{std::condition\_variable} is used for thread synchronization, while \texttt{std::future} is used to retrieve the result of an asynchronous operation.
+
+    \item \textbf{What is the role of the C++ memory model in multi-threading?}
+    \textbf{Answer:} The C++ memory model defines how threads interact with memory, ensuring proper synchronization and visibility of shared data.
+\end{enumerate}
+
+\end{document}

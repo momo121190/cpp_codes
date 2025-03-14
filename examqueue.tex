@@ -1,0 +1,209 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+\urlstyle{same}
+
+\title{Advanced C++ Multithreading Exam}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Instructions}
+\begin{itemize}
+    \item Answer all questions.
+    \item Assume C++17 or later standards unless specified otherwise.
+    \item Write code snippets where required.
+    \item Explain your reasoning for theoretical questions.
+\end{itemize}
+
+\section*{Section 1: Multiple Choice Questions (10 Questions)}
+
+\begin{enumerate}
+    \item \textbf{What is the primary purpose of \texttt{std::mutex} in a multi-threaded program?}
+    \begin{enumerate}[label=(\alph*)]
+        \item To allow threads to wait for a condition
+        \item To protect shared resources from concurrent access
+        \item To manage thread execution order
+        \item To signal between threads
+    \end{enumerate}
+
+    \item \textbf{Which of the following is true about \texttt{std::condition\_variable}?}
+    \begin{enumerate}[label=(\alph*)]
+        \item It can be used without a \texttt{std::mutex}
+        \item It must always be used with a \texttt{std::mutex}
+        \item It is used to lock resources
+        \item It replaces the need for \texttt{std::mutex}
+    \end{enumerate}
+
+    \item \textbf{What happens if a thread tries to lock a \texttt{std::mutex} that is already locked by another thread?}
+    \begin{enumerate}[label=(\alph*)]
+        \item The thread terminates immediately
+        \item The thread continues execution without locking
+        \item The thread blocks until the mutex is unlocked
+        \item The thread throws an exception
+    \end{enumerate}
+
+    \item \textbf{What is the purpose of \texttt{std::queue} in a producer-consumer scenario?}
+    \begin{enumerate}[label=(\alph*)]
+        \item To store threads
+        \item To store shared data between threads
+        \item To lock resources
+        \item To signal threads
+    \end{enumerate}
+
+    \item \textbf{Which of the following is true about \texttt{std::thread}?}
+    \begin{enumerate}[label=(\alph*)]
+        \item A thread cannot be joined after it has been detached
+        \item A thread must always be joined
+        \item A thread can be both joined and detached
+        \item A thread cannot be detached
+    \end{enumerate}
+
+    \item \textbf{What is the purpose of \texttt{std::condition\_variable::wait()}?}
+    \begin{enumerate}[label=(\alph*)]
+        \item To lock a mutex
+        \item To wait for a signal while releasing the mutex
+        \item To terminate a thread
+        \item To unlock a mutex
+    \end{enumerate}
+
+    \item \textbf{What happens if a \texttt{std::condition\_variable} is signaled but no thread is waiting?}
+    \begin{enumerate}[label=(\alph*)]
+        \item The signal is ignored
+        \item The program crashes
+        \item The signal is stored for the next waiting thread
+        \item An exception is thrown
+    \end{enumerate}
+
+    \item \textbf{Which of the following is true about \texttt{std::unique\_lock}?}
+    \begin{enumerate}[label=(\alph*)]
+        \item It cannot be used with \texttt{std::condition\_variable}
+        \item It automatically unlocks the mutex when it goes out of scope
+        \item It is less flexible than \texttt{std::lock\_guard}
+        \item It cannot be used with \texttt{std::mutex}
+    \end{enumerate}
+
+    \item \textbf{What is the purpose of \texttt{std::condition\_variable::notify\_all()}?}
+    \begin{enumerate}[label=(\alph*)]
+        \item To wake up a single waiting thread
+        \item To wake up all waiting threads
+        \item To terminate all threads
+        \item To lock all mutexes
+    \end{enumerate}
+
+    \item \textbf{What is a deadlock in the context of multi-threading?}
+    \begin{enumerate}[label=(\alph*)]
+        \item A situation where a thread terminates unexpectedly
+        \item A situation where two or more threads are blocked forever
+        \item A situation where a mutex is unlocked twice
+        \item A situation where a condition variable is signaled multiple times
+    \end{enumerate}
+\end{enumerate}
+
+\section*{Section 2: Code Analysis (10 Questions)}
+
+\begin{enumerate}
+    \item \textbf{Analyze the following code and identify any potential issues:}
+    \begin{verbatim}
+    std::mutex mtx;
+    std::queue<int> queue;
+    std::condition_variable cv;
+
+    void producer() {
+        for (int i = 0; i < 10; ++i) {
+            std::unique_lock<std::mutex> lock(mtx);
+            queue.push(i);
+            cv.notify_one();
+        }
+    }
+
+    void consumer() {
+        while (true) {
+            std::unique_lock<std::mutex> lock(mtx);
+            cv.wait(lock);
+            int value = queue.front();
+            queue.pop();
+            std::cout << value << std::endl;
+        }
+    }
+    \end{verbatim}
+
+    \item \textbf{What is the purpose of the \texttt{std::unique\_lock} in the above code?}
+
+    \item \textbf{What happens if the producer finishes before the consumer starts?}
+
+    \item \textbf{How can you modify the consumer to handle the case where the queue is empty?}
+
+    \item \textbf{What is the purpose of \texttt{cv.notify\_one()} in the producer?}
+
+    \item \textbf{What happens if \texttt{cv.notify\_all()} is used instead of \texttt{cv.notify\_one()}?}
+
+    \item \textbf{What is the risk of not using \texttt{std::unique\_lock} in the consumer?}
+
+    \item \textbf{How can you ensure the consumer thread terminates gracefully?}
+
+    \item \textbf{What is the purpose of the \texttt{std::queue} in this code?}
+
+    \item \textbf{What is the significance of the \texttt{std::mutex} in this code?}
+\end{enumerate}
+
+\section*{Section 3: Code Implementation (10 Questions)}
+
+\begin{enumerate}
+    \item \textbf{Implement a producer-consumer model using \texttt{std::queue}, \texttt{std::mutex}, \texttt{std::condition\_variable}, and \texttt{std::thread}.}
+
+    \item \textbf{Modify the above implementation to handle multiple producers and consumers.}
+
+    \item \textbf{Add a mechanism to gracefully shut down the consumer threads.}
+
+    \item \textbf{Implement a thread-safe queue using \texttt{std::queue}, \texttt{std::mutex}, and \texttt{std::condition\_variable}.}
+
+    \item \textbf{Write a program where two threads increment a shared counter using \texttt{std::mutex} for synchronization.}
+
+    \item \textbf{Write a program where a thread waits for a signal from another thread using \texttt{std::condition\_variable}.}
+
+    \item \textbf{Implement a barrier synchronization mechanism using \texttt{std::mutex} and \texttt{std::condition\_variable}.}
+
+    \item \textbf{Write a program to demonstrate a deadlock scenario involving two threads and two mutexes.}
+
+    \item \textbf{Fix the deadlock in the above program.}
+
+    \item \textbf{Write a program to demonstrate the use of \texttt{std::async} with \texttt{std::mutex} and \texttt{std::condition\_variable}.}
+\end{enumerate}
+
+\section*{Section 4: Theoretical Questions (10 Questions)}
+
+\begin{enumerate}
+    \item \textbf{Explain the difference between \texttt{std::mutex} and \texttt{std::recursive\_mutex}.}
+
+    \item \textbf{What is spurious wakeup, and how can you handle it in \texttt{std::condition\_variable}?}
+
+    \item \textbf{Explain the difference between \texttt{std::lock\_guard} and \texttt{std::unique\_lock}.}
+
+    \item \textbf{What is the purpose of \texttt{std::condition\_variable::wait\_for()}?}
+
+    \item \textbf{Explain the concept of thread safety and how it applies to \texttt{std::queue}.}
+
+    \item \textbf{What is the difference between \texttt{std::thread::join()} and \texttt{std::thread::detach()}?}
+
+    \item \textbf{Explain the concept of a race condition and how \texttt{std::mutex} prevents it.}
+
+    \item \textbf{What is the purpose of \texttt{std::atomic} in multi-threading?}
+
+    \item \textbf{Explain the difference between \texttt{std::condition\_variable} and \texttt{std::future}.}
+
+    \item \textbf{What is the role of the C++ memory model in multi-threading?}
+\end{enumerate}
+
+\end{document}
