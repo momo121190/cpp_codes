@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.10)
+project(ProjectName)
+
+# Cross-compilation settings
+set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc)
+set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
+set(CMAKE_FIND_ROOT_PATH /usr/x86_64-w64-mingw32)  # Mingw-w64 library path
+
+# Static linking
+set(CMAKE_EXE_LINKER_FLAGS "-static")
+
+# Wepoll setup
+include_directories(/wepoll)
+link_directories(/wepoll)
+
+# Executable
+add_executable(firstwepoll ex.cpp)
+target_link_libraries(firstwepoll libwepoll.a ws2_32)  # Link wepoll + Winsock2

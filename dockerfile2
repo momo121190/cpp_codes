@@ -1,0 +1,35 @@
+FROM ubuntu:22.04
+
+# Install tools (including mingw-w64 C++ compiler)
+RUN apt-get update --allow-releaseinfo-change && \
+    apt-get install -y \
+    git \
+    gcc-mingw-w64 \
+    g++-mingw-w64 \
+    mingw-w64-tools \
+    binutils-mingw-w64 \
+    make \
+    cmake \
+    wget \
+    unzip \
+    nano \
+    vim
+
+# Build wepoll
+RUN git clone https://github.com/piscisaureus/wepoll && \
+    cd wepoll && \
+    x86_64-w64-mingw32-gcc -shared -o wepoll.dll wepoll.c -lws2_32 && \
+    gendef wepoll.dll && \
+    x86_64-w64-mingw32-dlltool -d wepoll.def -l libwepoll.a -D wepoll.dll
+
+# Copy project files
+COPY . /src
+WORKDIR /src/build
+RUN rm -rf /src/build && mkdir /src/build
+# Configure CMake with MinGW-w64 toolchain
+RUN cmake -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+          -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+          .. && \
+    make
+
+CMD ["bash"]
