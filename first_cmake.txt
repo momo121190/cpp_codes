@@ -1,0 +1,9 @@
+cmake_minimum_required(VERSION 3.10)
+project(WepollDemo)
+
+# Link wepoll and Winsock2
+include_directories(${CMAKE_SOURCE_DIR}/wepoll)
+link_directories(${CMAKE_SOURCE_DIR}/wepoll)
+
+add_executable(wepoll_test main.c)
+target_link_libraries(wepoll_test libwepoll.a ws2_32)
