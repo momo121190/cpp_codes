@@ -1,0 +1,11 @@
+@echo off
+winget uninstall Git.Git
+winget install Git.Git
+powershell -Command "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser"
+powershell -Command "irm get.scoop.sh | iex"
+scoop install mingw
+scoop install gcc
+echo Done! Verify with:
+echo git --version
+echo gcc --version
+pause
