@@ -1,0 +1,14 @@
+@echo off
+git clone https://github.com/piscisaureus/wepoll || echo "Failed to clone wepoll" && exit /b 1
+cd wepoll || echo "Failed to enter wepoll directory" && exit /b 1
+
+gcc -shared -o wepoll.dll wepoll.c -lws2_32 || echo "Failed to compile wepoll.dll" && exit /b 1
+gendef wepoll.dll || echo "Failed to generate .def file" && exit /b 1
+dlltool -d wepoll.def -l libwepoll.a -D wepoll.dll || echo "Failed to create libwepoll.a" && exit /b 1
+
+rem Copy wepoll.dll to both the parent dir and the build dir (if it exists)
+xcopy /Y wepoll.dll ..\ || echo "Failed to copy wepoll.dll to parent dir"
+if exist "..\build" xcopy /Y wepoll.dll ..\build\ || echo "Failed to copy to build dir"
+
+cd ..
+pause
