@@ -1,0 +1,58 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\title{Comprehensive Exam on Windows Batch (.bat) Files}
+\author{}
+\date{}
+
+% Custom definition for batch file syntax highlighting
+\lstdefinelanguage{batch}{
+    keywords={echo, set, if, else, for, in, do, goto, call, start, pause, exit, cd, dir, del, copy, move, ren, md, rd, cls, type},
+    keywordstyle=\color{blue},
+    morecomment=[l]{::},
+    commentstyle=\color{green!60!black},
+    morestring=[b]",
+    stringstyle=\color{red},
+}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+}
+
+\begin{document}
+
+\maketitle
+
+[Previous sections remain the same until the debugging section...]
+
+\section{Debugging (20 points)}
+
+The following batch file has several errors. Identify and fix them:
+
+\begin{lstlisting}[language=batch]
+@echo off
+set count=0
+for %%f in (*.doc) do (
+    echo Processing %%f
+    set /a count+=1
+)
+echo Total files processed: %count%
+if %count% gtr 5 (
+    echo More than five files found
+) else (
+    echo Five or fewer files found
+)
+\end{lstlisting}
+
+[Rest of the document remains the same...]
+
+\end{document}
