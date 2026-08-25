@@ -1,0 +1,77 @@
+J'ai besoin d'aide sur GStreamer en C. Contexte précis :
+
+CE QUI MARCHE DÉJÀ dans mon code (ne pas y toucher, ne pas le réécrire) :
+- Un pipeline avec l'élément `concat` qui lit N séquences .mp4 H.264 
+  bout à bout en lecture avant.
+- La lecture arrière COMPLÈTE : je reconstruis le concat avec les 
+  fichiers dans l'ordre inverse (seqN ... seq2, seq1) et j'applique 
+  rate=-1.0. Ça fonctionne.
+
+CE QUI NE MARCHE PAS et que je dois faire :
+- Démarrer le reverse (ou le forward) à un INSTANT PRÉCIS de la timeline 
+  globale, pas depuis la fin/le début. 
+  Exemple : l'utilisateur est à 5 secondes de la séquence 2, il clique 
+  "reverse" → il faut reculer depuis ce point, finir seq2 à l'envers, 
+  puis enchaîner seq1 à l'envers.
+
+PISTES DÉJÀ TESTÉES ET ÉCARTÉES — ne me les repropose pas :
+- gst_element_seek() sur le pipeline avec une position globale : 
+  échoue, concat ne route le seek que vers le fichier courant.
+- Remplacer concat par playbin, GES, ou un rechargement de source : 
+  interdit, je dois garder concat.
+- Nommer les request pads explicitement (c.sink_0, c.sink_1) : inutile, 
+  gst_concat_request_new_pad() regénère toujours le nom en "sink_%u".
+- Se fier à gst_element_query_duration() sur le pipeline : concat ne 
+  traite pas DURATION, il renvoie la durée du seul fichier courant.
+
+CE QUE J'AI COMPRIS DU CODE SOURCE (gstconcat.c) :
+- gst_concat_src_event() pousse le SEEK uniquement vers current_sinkpad.
+- gst_concat_src_query() ne traite ni DURATION ni POSITION : les valeurs 
+  renvoyées sont celles du seul fichier en cours.
+- gst_concat_switch_pad() ne change de branche que sur EOS, et seulement 
+  dans l'ordre des pads. Aucun retour en arrière possible.
+- concat bloque les branches non actives (gst_concat_pad_wait).
+
+L'APPROCHE À IMPLÉMENTER (c'est la clé, ne t'en écarte pas) :
+On ne demande PAS à concat de se positionner. On lui donne un pipeline 
+déjà positionné :
+
+1. Table des segments : pour chaque fichier, son nom, sa durée, et son 
+   offset sur la timeline globale (= cumul des durées précédentes).
+
+2. Sur "reverse à l'instant T" :
+   - résoudre T → (index_segment, instant_local = T - offset[index])
+   - reconstruire le pipeline avec UNIQUEMENT les segments à lire, 
+     dans l'ordre de lecture : index, index-1, ... 0 pour un reverse.
+   - chaque branche : filesrc ! qtdemux name=dK ! h264parse ! queue ! c.
+     (nom unique dK par branche, indispensable pour la retrouver ensuite)
+
+3. Pipeline en PAUSED, puis SEEK INDIVIDUEL par branche via 
+   gst_bin_get_by_name() + gst_element_seek() sur le qtdemux :
+   - reverse : rate=-1, start=0, stop=borne
+   - forward : rate=+1, start=borne, stop=GST_CLOCK_TIME_NONE
+   - borne = instant_local pour la 1ère branche, durée du fichier (ou 0 
+     en forward) pour les suivantes
+   - flags FLUSH | ACCURATE
+
+4. PLAYING. concat enchaîne alors les branches sur EOS.
+
+DEUX PIÈGES À GÉRER OBLIGATOIREMENT :
+a) Le seek fait en PAUSED ne survit pas au déblocage d'une branche par 
+   concat : la branche repart en avant ou EOS immédiatement. Il faut 
+   s'abonner au signal "notify::active-pad" de l'élément concat et 
+   REJOUER le seek de la branche au moment où elle devient active. 
+   Prévoir un flag par branche pour ne pas boucler. Faire le seek via 
+   g_idle_add(), pas directement dans le callback GObject.
+b) Pour la position globale : ne pas se fier à query_position sur le 
+   pipeline (il renvoie la position DANS le fichier courant). Suivre la 
+   branche active via le même signal, puis :
+   position_globale = offset[segment_actif] + position_locale
+
+Contraintes : C (pas C++), GStreamer 1.24, 2 à 16 séquences, pipeline 
+reconstruit à chaque changement de sens ou de point de départ.
+
+Écris-moi le code C de cette architecture : structure de la table, 
+fonction play_from(double t_global, double rate), fonction de seek d'une 
+branche, callback notify::active-pad, calcul de position globale. 
+Commente en français.
