@@ -92,6 +92,7 @@ def print_timeline():
   {CYN}r <t>{RESET}      reverse à partir de la seconde t
   {CYN}f <t>{RESET}      forward à partir de la seconde t
   {CYN}r{RESET} / {CYN}f{RESET}      depuis la position actuelle
+  {CYN}ra{RESET}         reverse complet (toute la timeline)
   {CYN}s{RESET}          position actuelle
   {CYN}w [n]{RESET}      suivi en direct pendant n secondes (défaut 15)
   {CYN}t{RESET}          réaffiche la timeline
@@ -154,6 +155,8 @@ def main():
                 resp = send("PLAY")
             elif cmd == "s":
                 resp = send("STATUS")
+            elif cmd == "ra":
+                resp = send("REVERSEALL")
             elif cmd == "r":
                 resp = send(f"REVERSE {parts[1]}" if len(parts) > 1 else "REVERSE")
             elif cmd == "f":
@@ -167,7 +170,7 @@ def main():
                 continue
             print(f"  {RED if resp.startswith('ERR') else DIM}{resp}{RESET}")
 
-            if cmd in ("p", "r", "f"):
+            if cmd in ("p", "r", "f", "ra"):
                 time.sleep(0.5)
                 st = send("STATUS")
                 if st:

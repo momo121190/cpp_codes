@@ -295,6 +295,11 @@ static gboolean handle(gpointer data) {
         gboolean ok = play_from(0.0, 1.0);
         reply(fd, "%s PLAY", ok ? "OK" : "ERR");
 
+    } else if (!strncmp(l, "REVERSEALL", 10)) {
+        /* reverse complet : depuis la fin de la timeline */
+        gboolean ok = play_from(total - 0.05, -1.0);
+        reply(fd, "%s REVERSEALL depuis %.2f", ok ? "OK" : "ERR", total - 0.05);
+
     } else if (!strncmp(l, "REVERSE", 7)) {
         gdouble t;
         if (sscanf(l, "REVERSE %lf", &t) != 1) {
