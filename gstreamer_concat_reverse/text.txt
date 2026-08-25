@@ -1,0 +1,87 @@
+PROMPT :
+
+Contexte : je développe un service de replay vidéo en C avec GStreamer. 
+Les séquences sont des fichiers .mp4 H.264 déjà enregistrés sur disque. 
+Je les lis avec l'élément `concat` (contrainte imposée : je dois garder concat).
+
+Ce qui marche déjà :
+- lecture avant de N séquences concaténées
+- lecture arrière complète (je construis le concat avec les fichiers en ordre 
+  inverse, chaque branche en rate négatif)
+
+Ce que je dois ajouter :
+- passer en marche arrière (ou avant) À PARTIR D'UN INSTANT PRÉCIS de la 
+  timeline globale. Exemple : je lis, l'utilisateur clique "reverse" alors 
+  qu'on est à 5 secondes de la séquence 2 → il faut reculer depuis ce point, 
+  finir la séquence 2 à l'envers, puis enchaîner sur la séquence 1 à l'envers.
+
+IMPORTANT — trois limitations de `concat` que j'ai vérifiées dans le code 
+source (gstconcat.c) et qu'il ne faut PAS essayer de contourner :
+1. `gst_concat_src_event()` ne pousse un SEEK que vers `current_sinkpad`. 
+   Un seek envoyé au pipeline n'atteint jamais les autres branches, et concat 
+   ne sait pas traduire une position globale en (fichier, position locale).
+2. `gst_concat_src_query()` ne traite pas DURATION ni POSITION : concat 
+   rapporte toujours les valeurs du SEUL fichier courant, jamais un cumul.
+3. `gst_concat_switch_pad()` ne change de branche que sur EOS, et uniquement 
+   dans l'ordre des request pads. Aucun retour arrière entre segments.
+   (Note : dans `gst_concat_request_new_pad()`, le nom du pad est toujours 
+   regénéré en "sink_%u" — écrire `c.sink_0` explicitement ne sert à rien.)
+
+ARCHITECTURE À IMPLÉMENTER (c'est le point clé, ne pas t'en écarter) :
+
+Au lieu de demander à concat de gérer une timeline globale, on RECONSTRUIT 
+le pipeline à chaque commande :
+
+a) Table des segments : pour chaque fichier, son nom, sa durée, et son offset 
+   de départ sur la timeline globale (= cumul des durées précédentes).
+
+b) À la commande "reverse à l'instant T global" :
+   - résoudre T → (index_segment, instant_local) 
+     avec instant_local = T - offset_du_segment
+   - construire un pipeline concat contenant UNIQUEMENT les segments à lire, 
+     DANS L'ORDRE DE LECTURE : pour un reverse depuis le segment i, l'ordre 
+     est i, i-1, i-2, ... 0. Pour un forward : i, i+1, ... N-1.
+   - chaque branche : `filesrc location=X ! qtdemux name=dK ! queue ! c.`
+     avec un nom unique dK par branche (indispensable pour la retrouver)
+
+c) Seek INDIVIDUEL par branche, pipeline en PAUSED, via 
+   gst_bin_get_by_name() puis gst_element_seek() sur le qtdemux :
+   - reverse : rate=-1.0, GST_SEEK_TYPE_SET start=0, stop=borne
+     (borne = instant_local pour la 1ère branche, durée du fichier pour les autres)
+   - forward : rate=+1.0, GST_SEEK_TYPE_SET start=borne, stop=GST_CLOCK_TIME_NONE
+     (borne = instant_local pour la 1ère branche, 0 pour les autres)
+   - flags : GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE
+   
+d) Puis passer en PLAYING. concat enchaîne alors les branches sur EOS, 
+   ce qui est son fonctionnement normal.
+
+DEUX PIÈGES À GÉRER OBLIGATOIREMENT :
+
+Piège 1 : concat bloque les branches non actives (gst_concat_pad_wait). 
+Le seek fait en PAUSED ne survit pas au déblocage — la branche repart en 
+avant ou émet un EOS immédiat. Solution : se connecter au signal 
+`notify::active-pad` de l'élément concat, et REJOUER le seek de la branche 
+au moment où elle devient active. Prévoir un flag par branche pour ne pas 
+reseeker en boucle. Faire le seek via g_idle_add(), pas directement dans 
+le callback GObject.
+
+Piège 2 : pour connaître la position globale, on ne peut pas se fier à 
+gst_element_query_position() sur le pipeline (il renvoie la position DANS 
+LE FICHIER COURANT). Il faut suivre quelle branche est active via le même 
+signal `notify::active-pad`, puis calculer :
+    position_globale = offset_du_segment_actif + position_locale_retournée
+
+Contraintes techniques :
+- C (pas C++), GStreamer 1.24
+- nombre de séquences variable (2 à 16)
+- le pipeline est reconstruit à chaque changement de sens ou de point de départ
+
+Écris-moi le code C complet de cette architecture, avec :
+- la structure de la table de segments
+- la fonction principale play_from(double t_global, double rate) qui fait 
+  a) à d) ci-dessus
+- la fonction de seek d'une branche
+- le callback notify::active-pad avec le rejeu du seek et le suivi de 
+  la branche active
+- la fonction de calcul de position globale
+Commente le code en français.
